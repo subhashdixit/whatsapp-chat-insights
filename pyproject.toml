@@ -1,0 +1,6 @@
+[tool.black]
+line-length = 88
+[tool.pylint.messages_control]
+disable = ["too-many-locals", "too-many-statements", "too-few-public-methods"]
+[tool.pylint.format]
+max-line-length = 88
