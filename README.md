@@ -1,5 +1,7 @@
 # WhatsApp Chat Insights
 
+**Live application:** [Open Whatsapp Chat Insights](https://subhash-chat-insights.pages.dev) · [Source code](https://github.com/subhashdixit/whatsapp-chat-insights)
+
 Analyze an exported WhatsApp **text** chat locally in your browser: message counts, participation, activity over time, optional word/emoji frequencies and an alias-only summary export. The original exploratory notebook/report is preserved, while this application requires no Python analytics server.
 
 **Try the included synthetic demo first.** Its 240 messages and three fictional participants are generated sample data, not a real private chat.
@@ -100,7 +102,7 @@ python3 scripts/package.py
 4. The output is `dist/chat-insights.zip`. It contains only `site/` contents with `index.html` at the ZIP root, not private files, source notebooks or the virtual environment.
 5. Sign in to Cloudflare, create a **Pages Direct Upload** project, choose the ZIP and deploy. The provider assigns a `pages.dev` address. There is no server runtime or paid database requirement.
 6. Open the assigned URL, run the synthetic demo, check date/participant filters and download the alias-only CSV. Inspect response headers and verify that selecting a local file does not send its content over the network.
-7. Record the deployed Git commit and keep its ZIP as the release artifact. A verified live URL will be added after account access and a real upload are complete.
+7. Record the deployed Git commit and keep its ZIP as the release artifact. The verified deployment is linked at the top of this README. Its initial release is commit `55c0a6719b7e0ef228f8909ef6dec6c488d3dbb8`.
 
 Hosting stores and serves the static application files. Deployment replaces those files with a specific tested build. The chat file stays in the browser; it is not part of the release artifact. A provider's free plan and limits can change; consult [Cloudflare's current Pages limits](https://developers.cloudflare.com/pages/platform/limits/).
 
