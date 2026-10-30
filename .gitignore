@@ -1,1 +1,6 @@
-Graphs.xlsx
+node_modules/
+__pycache__/
+.pytest_cache/
+.pylint-cache/
+dist/
+.DS_Store
