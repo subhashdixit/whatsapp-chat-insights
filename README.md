@@ -6,6 +6,8 @@ Analyze an exported WhatsApp **text** chat locally in your browser: message coun
 
 **Try the included synthetic demo first.** Its 240 messages and three fictional participants are generated sample data, not a real private chat.
 
+![Deployed application](docs/images/application.png)
+
 ## How to use it
 
 1. Export a chat **without media** from WhatsApp and select the resulting `.txt` file. A ZIP, PDF, screenshot, database backup or encrypted archive is not a text export.
