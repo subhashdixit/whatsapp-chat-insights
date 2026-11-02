@@ -1,0 +1,3 @@
+# No third-party Python dependencies for the maintained HTML/JavaScript app.
+# Python helper scripts use the standard library only.
+# See README.md and package.json for local Node/browser commands.
