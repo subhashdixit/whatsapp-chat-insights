@@ -115,3 +115,7 @@ Hosting stores and serves the static application files. Deployment replaces thos
 ## Scope and extensions
 
 The app does not read your WhatsApp account, fetch messages, decrypt backups, analyze media or infer relationships. Future parser support should be added with small synthetic fixtures for the new format, including failure cases. Avoid committing a real conversation as a regression test.
+
+## Exact local dependency versions
+
+The maintained HTML/JavaScript app needs no third-party Python packages. Python helpers use the standard library. Use the existing browser/Node instructions below; no Python dependency installation is required.
