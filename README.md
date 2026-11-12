@@ -1,14 +1,34 @@
 # WhatsApp Chat Insights
 
-**Live application:** [Open Whatsapp Chat Insights](https://subhash-chat-insights.pages.dev) · [Source code](https://github.com/subhashdixit/whatsapp-chat-insights)
+## 1. Project overview
 
-Analyze an exported WhatsApp **text** chat locally in your browser: message counts, participation, activity over time, optional word/emoji frequencies and an alias-only summary export. The original exploratory notebook/report is preserved, while this application requires no Python analytics server.
+Browser-local chat text analysis with Web Workers, aliases, aggregate CSV export and manual Cloudflare Pages hosting.
 
-**Try the included synthetic demo first.** Its 240 messages and three fictional participants are generated sample data, not a real private chat.
+[Live demo](https://subhash-chat-insights.pages.dev) · [Source repository](https://github.com/subhashdixit/whatsapp-chat-insights)
 
-![Deployed application](docs/images/application.png)
+![WhatsApp Chat Insights application screen](docs/images/application.png)
 
-## How to use it
+## 2. Motivation and problem statement
+
+### Objective
+
+Summarize activity from a WhatsApp text export without sending chat text to a server.
+
+### Problem statement
+
+Plain exports are difficult to aggregate and have ambiguous date formats.
+
+### Motivation
+
+Local parsing and alias-based exports let users review activity while controlling what they share.
+
+## 3. Solution and scope
+
+**Inputs** — WhatsApp text export and date order. **Outputs** — Activity charts and alias-only summary export.
+
+## 4. Quick start and usage
+
+### How to use it
 
 1. Export a chat **without media** from WhatsApp and select the resulting `.txt` file. A ZIP, PDF, screenshot, database backup or encrypted archive is not a text export.
 2. Choose **day/month/year** or **month/day/year** explicitly. `03/04/24` is ambiguous; the app will not guess your intended calendar.
@@ -18,7 +38,84 @@ Analyze an exported WhatsApp **text** chat locally in your browser: message coun
 6. Download an aggregate CSV with aliases and counts. It excludes message text, original names and word-frequency details.
 7. Use **Reset** to clear the interface and terminate the worker. This clears application references; it does not promise forensic erasure of browser memory or delete the original file on your computer.
 
-## Privacy and architecture
+## 5. High-level architecture
+
+```mermaid
+flowchart LR
+    A["User input"] --> B["Interface"] --> C["Browser engine"] --> D["Result"]
+```
+
+## 6. End-to-end request workflow
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant UI as Project interface
+    participant Engine as Browser engine
+    User->>UI: Provide WhatsApp text export and date order
+    UI->>Engine: Process validated input
+    Engine->>Engine: Parse and aggregate in a browser worker
+    Engine-->>UI: Activity charts and alias-only summary export
+    UI-->>User: Present result or input feedback
+```
+
+## 7. Data sources, inputs, and outputs
+
+| Input | Processing | Output |
+| --- | --- | --- |
+| WhatsApp text export and date order | Parse and aggregate in a browser worker | Activity charts and alias-only summary export |
+
+## 8. Data flow and ETL pipeline
+
+```mermaid
+flowchart LR
+    A["WhatsApp text export and date order"] --> B["Parse and aggregate in a browser worker"] --> C["Activity charts and alias-only summary export"]
+```
+
+## 9. Low-level design and interfaces
+
+Implementation entry points are [`site/index.html`](<site/index.html>), [`site/app.js`](<site/app.js>), [`site/parser.js`](<site/parser.js>), [`site/worker.js`](<site/worker.js>), [`site/charts.js`](<site/charts.js>).
+
+### What the parser supports
+
+- Common Android timestamps such as `31/12/2024, 10:15 - Name: text` and iOS-style bracketed timestamps.
+- English AM/PM where present, year-first or explicit day/month ordering where supported, and multiline message bodies.
+- Sender separation using `: `, with system events counted separately.
+- Counts of invalid timestamp headers and text that could not be assigned to a supported message.
+- Limits of **10 MiB**, **200,000 lines**, **100,000 messages** and **5,000 participants** to bound local memory and execution.
+
+Locale-specific punctuation, translated AM/PM markers, unusual sender names containing the delimiter, edited export conventions and nonstandard system events can be misinterpreted. Counts are only as complete as the export and parser coverage. A displayed warning is a reason to inspect the format, not to assume every line was understood.
+
+Dates are placed into UTC-backed buckets to preserve the text's displayed wall-clock fields consistently. The app does **not** infer participant timezones or convert timestamps into actual UTC instants. An hour-of-day chart describes the export's written clock, not every participant's local time.
+
+## 10. Concepts and algorithms
+
+### Concepts behind the charts
+
+| View | What it answers | What it cannot establish |
+|---|---|---|
+| Participant counts | How many parsed messages each alias sent | Effort, sentiment or relationship quality. |
+| Monthly activity | When the exported conversation was more active | Why activity changed or whether deleted messages existed. |
+| Hourly distribution | Which written hours contain messages | Actual timezone-aware sleep/work patterns. |
+| Word frequency | Common tokens under a simple tokenization rule | Intent, semantic topics or psychological traits. |
+| Emoji frequency | Frequent matched emoji sequences | Reliable sentiment across contexts and cultures. |
+
+A message count gives equal weight to “OK” and a long paragraph. Word frequencies omit conversational context and can include personal information; they stay local and are not part of the summary CSV. This is descriptive analysis, not a trained NLP model. There is no training/evaluation accuracy metric because there is no prediction task; parser fixtures and aggregation checks provide the relevant evidence instead.
+
+## 11. Technology choices and dependencies
+
+- **HTML, CSS, and JavaScript**. Serve a static browser interface with inspectable rendering and validation.
+- **Web Workers**. Parse and aggregate chat exports without blocking the page.
+
+## 12. Training, inference, and evaluation
+
+Review behavior using the checked-in fixtures and assertions. This application has no project-trained model benchmark.
+
+Validation code is available in [`tests/parser.test.js`](<tests/parser.test.js>).
+
+## 13. Limitations and data handling
+
+### Privacy and architecture
 
 ```mermaid
 flowchart LR
@@ -35,31 +132,13 @@ There is **no upload endpoint, remote analytics script, external font/CDN, brows
 
 The static host still serves the website and can observe ordinary connection metadata such as IP address and asset requests. Browser extensions, the operating system, shared screens and anyone with access to your computer remain outside this app's control. Do not assume a local tool makes sharing someone else's conversation appropriate. No actual chat export is included in this repository.
 
-## What the parser supports
+### Scope and extensions
 
-- Common Android timestamps such as `31/12/2024, 10:15 - Name: text` and iOS-style bracketed timestamps.
-- English AM/PM where present, year-first or explicit day/month ordering where supported, and multiline message bodies.
-- Sender separation using `: `, with system events counted separately.
-- Counts of invalid timestamp headers and text that could not be assigned to a supported message.
-- Limits of **10 MiB**, **200,000 lines**, **100,000 messages** and **5,000 participants** to bound local memory and execution.
+The app does not read your WhatsApp account, fetch messages, decrypt backups, analyze media or infer relationships. Future parser support should be added with small synthetic fixtures for the new format, including failure cases. Avoid committing a real conversation as a regression test.
 
-Locale-specific punctuation, translated AM/PM markers, unusual sender names containing the delimiter, edited export conventions and nonstandard system events can be misinterpreted. Counts are only as complete as the export and parser coverage. A displayed warning is a reason to inspect the format, not to assume every line was understood.
+## 14. Installation and local setup
 
-Dates are placed into UTC-backed buckets to preserve the text's displayed wall-clock fields consistently. The app does **not** infer participant timezones or convert timestamps into actual UTC instants. An hour-of-day chart describes the export's written clock, not every participant's local time.
-
-## Concepts behind the charts
-
-| View | What it answers | What it cannot establish |
-|---|---|---|
-| Participant counts | How many parsed messages each alias sent | Effort, sentiment or relationship quality. |
-| Monthly activity | When the exported conversation was more active | Why activity changed or whether deleted messages existed. |
-| Hourly distribution | Which written hours contain messages | Actual timezone-aware sleep/work patterns. |
-| Word frequency | Common tokens under a simple tokenization rule | Intent, semantic topics or psychological traits. |
-| Emoji frequency | Frequent matched emoji sequences | Reliable sentiment across contexts and cultures. |
-
-A message count gives equal weight to “OK” and a long paragraph. Word frequencies omit conversational context and can include personal information; they stay local and are not part of the summary CSV. This is descriptive analysis, not a trained NLP model. There is no training/evaluation accuracy metric because there is no prediction task; parser fixtures and aggregation checks provide the relevant evidence instead.
-
-## Run locally and test
+### Run locally and test
 
 Use Node.js 22+ for tests and Python 3.10+ for the local server/package utility. No npm dependency download is needed.
 
@@ -89,7 +168,21 @@ tests/                parser and aggregation fixtures
 
 The content security policy restricts scripts and workers to this origin. Cloudflare header configuration adds no-sniff, no-referrer and frame restrictions. Response headers are checked after hosting; a local `http.server` does not implement Cloudflare's `_headers` file. Safe DOM text handling avoids interpreting chat content as HTML. CSV fields are escaped against spreadsheet formula interpretation.
 
-## Manual Cloudflare Pages deployment
+### Exact local dependency versions
+
+The maintained HTML/JavaScript app needs no third-party Python packages. Python helpers use the standard library. Use the existing browser/Node instructions below; no Python dependency installation is required.
+
+## 15. Repository structure
+
+- [`site/index.html`](<site/index.html>)
+- [`site/app.js`](<site/app.js>)
+- [`site/parser.js`](<site/parser.js>)
+- [`site/worker.js`](<site/worker.js>)
+- [`site/charts.js`](<site/charts.js>)
+
+## 16. Deployment and operations
+
+### Manual Cloudflare Pages deployment
 
 This project intentionally demonstrates a **manual static release**, without a custom CI/CD workflow. It is a useful contrast with the automated GitHub Pages projects, and requires discipline: run tests for each release.
 
@@ -112,10 +205,6 @@ Hosting stores and serves the static application files. Deployment replaces thos
 
 **Rollback:** use the provider's previous successful deployment where available, or re-upload the ZIP built from a known-good Git commit. Re-run the demo and parser checks. Versioning records source changes; rollback restores a release, not the private local files users analyzed. Docker adds no serving benefit here because the entire runtime is the browser.
 
-## Scope and extensions
+## 17. License, credits, and support
 
-The app does not read your WhatsApp account, fetch messages, decrypt backups, analyze media or infer relationships. Future parser support should be added with small synthetic fixtures for the new format, including failure cases. Avoid committing a real conversation as a regression test.
-
-## Exact local dependency versions
-
-The maintained HTML/JavaScript app needs no third-party Python packages. Python helpers use the standard library. Use the existing browser/Node instructions below; no Python dependency installation is required.
+The repository does not contain a root LICENSE file. Check upstream and data-source terms before reuse. Report reproducible issues through [GitHub Issues](https://github.com/subhashdixit/whatsapp-chat-insights/issues).
